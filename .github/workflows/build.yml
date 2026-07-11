@@ -70,13 +70,14 @@ jobs:
           find source -type f -path '*/build/outputs/apk/release/*.apk' -exec cp -v {} repo/apk/ \;
           echo "APKs collected:"; ls -la repo/apk
 
-      - name: Run Inspector + generate index
+      - name: Run Inspector + generate repo
         run: |
+          pip install --quiet protobuf
           INSPECTOR_URL="$(curl -s https://api.github.com/repos/keiyoushi/extensions-inspector/releases/latest | jq -r '.assets[0].browser_download_url')"
           echo "Inspector: $INSPECTOR_URL"
           curl -L "$INSPECTOR_URL" -o Inspector.jar
           java -jar Inspector.jar "repo/apk" "output.json" "tmp"
-          python scripts/make-index.py
+          python scripts/make-repo.py
           cp README.md repo/README.md 2>/dev/null || true
 
       - name: Publish to repo branch
