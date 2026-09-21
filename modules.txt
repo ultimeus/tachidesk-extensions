@@ -1,3 +1,4 @@
+:src:fr:scanmanga:lintRelease
 # Gradle targets to build for this personal repo — one per line.
 # Add a line per patched extension; remove it once the fix is merged upstream.
 :src:fr:scanmanga:assembleRelease
