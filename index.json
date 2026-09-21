@@ -1,0 +1,33 @@
+{
+  "name": "Ultimeus",
+  "badgeLabel": "ULT",
+  "signingKey": "83c29df5755459f0a5a3e9b5a33f1c4c893967b4f5b900b6e2c545e518ac9503",
+  "contact": {
+    "website": "https://github.com/ultimeus/tachidesk-extensions"
+  },
+  "extensionList": {
+    "extensions": [
+      {
+        "name": "Scan-Manga",
+        "packageName": "eu.kanade.tachiyomi.extension.fr.scanmanga",
+        "resources": {
+          "apkUrl": "https://raw.githubusercontent.com/ultimeus/tachidesk-extensions/repo/apk/tachiyomi-fr.scanmanga-v1.4.43.apk",
+          "iconUrl": "https://raw.githubusercontent.com/ultimeus/tachidesk-extensions/repo/icon/eu.kanade.tachiyomi.extension.fr.scanmanga.png",
+          "jarUrl": "https://raw.githubusercontent.com/ultimeus/tachidesk-extensions/repo/jar/tachiyomi-fr.scanmanga-v1.4.43.jar"
+        },
+        "extensionLib": "1.4",
+        "versionCode": "104043",
+        "versionName": "1.4.43",
+        "contentWarning": "CONTENT_WARNING_NSFW",
+        "sources": [
+          {
+            "id": "2062108502806113139",
+            "name": "Scan-Manga",
+            "language": "fr",
+            "homeUrl": "https://www.scan-manga.com"
+          }
+        ]
+      }
+    ]
+  }
+}
