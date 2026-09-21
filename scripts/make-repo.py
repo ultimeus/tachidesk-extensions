@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
-"""Generate a full keiyoushi/Suwayomi-compatible extension repo from built APKs
-plus an Inspector `output.json`.
+"""Generate a full keiyoushi/Suwayomi-compatible extension repo from built
+APKs, JARs, and Keiyoushi source metadata.
 
 Emits under repo/:
     repo.json        metadata Suwayomi reads first (points at index.pb, declares key)
@@ -36,7 +36,8 @@ ICON_BASE_URL = f"{RAW_BASE}/icon"
 INDEX_PB_URL = f"{RAW_BASE}/index.pb"
 
 ANDROID_HOME = os.environ.get("ANDROID_HOME") or os.environ["ANDROID_SDK_ROOT"]
-AAPT = sorted((Path(ANDROID_HOME) / "build-tools").iterdir())[-1] / "aapt"
+AAPT_NAME = "aapt.exe" if os.name == "nt" else "aapt"
+AAPT = sorted((Path(ANDROID_HOME) / "build-tools").iterdir())[-1] / AAPT_NAME
 
 REPO = Path("repo")
 APK_DIR = REPO / "apk"
@@ -58,8 +59,11 @@ def hex_to_float(h):
     return round(struct.unpack(">f", struct.pack(">I", int(h, 16)))[0], 1)
 
 
-with open("output.json", encoding="utf-8") as f:
-    inspector = json.load(f)
+source_infos = {}
+for info_file in Path("source").glob("**/keiyoushi-source-info.json"):
+    with info_file.open(encoding="utf-8") as f:
+        info = json.load(f)
+    source_infos[info["packageName"]] = info
 
 proto_exts = []   # index_pb2.Extension
 legacy = []       # classic index.min.json objects
@@ -78,6 +82,10 @@ for apk in sorted(APK_DIR.glob("*.apk")):
     code = int(VCODE_RE.search(pline).group(1))
     version = VNAME_RE.search(pline).group(1)
 
+    info = source_infos.get(pkg)
+    if info is None:
+        raise KeyError(f"no keiyoushi-source-info.json found for {pkg}")
+
     nm = NAME_RE.search(badging) or LABEL_RE.search(badging)
     name = nm.group(1) if nm else pkg
 
@@ -93,19 +101,19 @@ for apk in sorted(APK_DIR.glob("*.apk")):
                 (ICON_DIR / f"{pkg}.png").open("wb") as o:
             o.write(s.read())
 
-    srcs = inspector.get(pkg, [])
+    srcs = info["sources"]
     proto_exts.append(index_pb2.Extension(
-        name=name,
+        name=info.get("name", name),
         packageName=pkg,
         resources=index_pb2.Resources(
             apkUrl=f"{APK_BASE_URL}/{apk.name}",
             iconUrl=f"{ICON_BASE_URL}/{pkg}.png",
             jarUrl=f"{JAR_BASE_URL}/{jar.name}",
         ),
-        extensionLib=ext_lib,
-        versionCode=code,
-        versionName=version,
-        contentWarning=cw_meta + 1,   # -> proto enum SAFE=1 / MIXED=2 / NSFW=3
+        extensionLib=info.get("extensionLib", ext_lib),
+        versionCode=info.get("versionCode", code),
+        versionName=info.get("versionName", version),
+        contentWarning=info.get("contentWarning", cw_meta + 1),
         sources=[
             index_pb2.Source(
                 id=int(s["id"]), name=s["name"],
@@ -116,7 +124,7 @@ for apk in sorted(APK_DIR.glob("*.apk")):
 
     langs = {s["lang"] for s in srcs}
     legacy.append({
-        "name": name, "pkg": pkg, "apk": apk.name,
+        "name": info.get("name", name), "pkg": pkg, "apk": apk.name,
         "lang": langs.pop() if len(langs) == 1 else "all",
         "code": code, "version": version,
         "nsfw": 0 if cw_meta == 0 else 1,
