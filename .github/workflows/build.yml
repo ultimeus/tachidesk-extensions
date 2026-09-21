@@ -61,11 +61,13 @@ jobs:
           echo "Building: ${MODULES[*]}"
           ./gradlew "${MODULES[@]}" --no-daemon --stacktrace
 
-      - name: Collect signed APKs
+      - name: Collect signed APKs and JARs
         run: |
-          mkdir -p repo/apk
+          mkdir -p repo/apk repo/jar
           find source -type f -path '*/build/outputs/apk/release/*.apk' -exec cp -v {} repo/apk/ \;
+          find source -type f -path '*/build/outputs/jar/release/*.jar' -exec cp -v {} repo/jar/ \;
           echo "APKs collected:"; ls -la repo/apk
+          echo "JARs collected:"; ls -la repo/jar
 
       - name: Run Inspector + generate repo
         run: |

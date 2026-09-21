@@ -7,6 +7,7 @@ Emits under repo/:
     index.pb         gzipped protobuf Index (what modern Suwayomi/Mihon consume)
     index.json       same Index as JSON (new format)
     index.min.json   legacy flat format (older clients)
+    jar/*.jar        signed JVM extension artifacts for modern Suwayomi
     icon/<pkg>.png   per-extension icons
 """
 import gzip
@@ -30,6 +31,7 @@ WEBSITE = "https://github.com/ultimeus/tachidesk-extensions"
 SIGNING_KEY_FP = "83c29df5755459f0a5a3e9b5a33f1c4c893967b4f5b900b6e2c545e518ac9503"
 RAW_BASE = "https://raw.githubusercontent.com/ultimeus/tachidesk-extensions/repo"
 APK_BASE_URL = f"{RAW_BASE}/apk"
+JAR_BASE_URL = f"{RAW_BASE}/jar"
 ICON_BASE_URL = f"{RAW_BASE}/icon"
 INDEX_PB_URL = f"{RAW_BASE}/index.pb"
 
@@ -38,6 +40,7 @@ AAPT = sorted((Path(ANDROID_HOME) / "build-tools").iterdir())[-1] / "aapt"
 
 REPO = Path("repo")
 APK_DIR = REPO / "apk"
+JAR_DIR = REPO / "jar"
 ICON_DIR = REPO / "icon"
 ICON_DIR.mkdir(parents=True, exist_ok=True)
 
@@ -62,6 +65,10 @@ proto_exts = []   # index_pb2.Extension
 legacy = []       # classic index.min.json objects
 
 for apk in sorted(APK_DIR.glob("*.apk")):
+    jar = JAR_DIR / f"{apk.stem}.jar"
+    if not jar.is_file():
+        raise FileNotFoundError(f"no matching release JAR found for {apk.name}")
+
     badging = subprocess.check_output(
         [str(AAPT), "dump", "--include-meta-data", "badging", str(apk)]
     ).decode("utf-8", "replace")
@@ -93,6 +100,7 @@ for apk in sorted(APK_DIR.glob("*.apk")):
         resources=index_pb2.Resources(
             apkUrl=f"{APK_BASE_URL}/{apk.name}",
             iconUrl=f"{ICON_BASE_URL}/{pkg}.png",
+            jarUrl=f"{JAR_BASE_URL}/{jar.name}",
         ),
         extensionLib=ext_lib,
         versionCode=code,
