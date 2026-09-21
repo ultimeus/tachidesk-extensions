@@ -71,9 +71,27 @@ jobs:
 
       - name: Generate extension repo
         run: |
-          pip install --quiet protobuf
+          pip install --quiet protobuf beautifulsoup4
           python scripts/make-repo.py
           cp README.md repo/README.md 2>/dev/null || true
+
+      - name: Start FlareSolverr for Scan-Manga catalog
+        run: |
+          docker run -d --name flaresolverr -p 8191:8191 \
+            ghcr.io/flaresolverr/flaresolverr:v3.5.2
+          for attempt in {1..30}; do
+            if curl --fail --silent http://127.0.0.1:8191/health >/dev/null; then
+              exit 0
+            fi
+            sleep 2
+          done
+          docker logs flaresolverr
+          exit 1
+
+      - name: Generate Scan-Manga search catalog
+        env:
+          FLARESOLVERR_URL: http://127.0.0.1:8191
+        run: python scripts/scrape-scanmanga.py --output repo/catalog/scanmanga.json
 
       - name: Publish to repo branch
         run: |
